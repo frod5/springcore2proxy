@@ -11,6 +11,7 @@ import org.springframework.aop.MethodMatcher;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
+import org.springframework.aop.support.NameMatchMethodPointcut;
 
 import java.lang.reflect.Method;
 
@@ -64,6 +65,38 @@ public class AdvisorTest {
         ServiceInterface proxy = (ServiceInterface) proxyFactory.getProxy();
         proxy.save();
         proxy.find();
+
+    }
+
+    @Test
+    @DisplayName("스프링이 제공하는 포인트컷")
+    void advisorTest3() {
+
+        ServiceInterface target = new ServiceImpl();
+        ProxyFactory proxyFactory = new ProxyFactory(target);
+        NameMatchMethodPointcut pointcut = new NameMatchMethodPointcut(); // 스프링이 제공하는 포인트컷 사용
+        pointcut.setMappedName("save");
+        DefaultPointcutAdvisor advisor = new DefaultPointcutAdvisor(pointcut ,new TimeAdvice());
+        proxyFactory.addAdvisor(advisor);
+
+        ServiceInterface proxy = (ServiceInterface) proxyFactory.getProxy();
+        proxy.save();
+        proxy.find();
+
+        //스프링이 제공하는 포인트컷
+        //스프링은 무수히 많은 포인트컷을 제공한다.
+        //대표적인 몇가지만 알아보자.
+        //NameMatchMethodPointcut : 메서드 이름을 기반으로 매칭한다. 내부에서는 PatternMatchUtils 를 사용한다. 예) *xxx* 허용
+        //JdkRegexpMethodPointcut : JDK 정규 표현식을 기반으로 포인트컷을 매칭한다.
+        //TruePointcut : 항상 참을 반환한다.
+        //AnnotationMatchingPointcut : 애노테이션으로 매칭한다.
+        //AspectJExpressionPointcut : aspectJ 표현식으로 매칭한다.
+
+        //가장 중요한 것은 aspectJ 표현식
+        //여기에서 사실 다른 것은 중요하지 않다. 실무에서는 사용하기도 편리하고 기능도 가장 많은 aspectJ
+        //표현식을 기반으로 사용하는 AspectJExpressionPointcut 을 사용하게 된다.
+        //aspectJ 표현식과 사용방법은 중요해서 이후 AOP를 설명할 때 자세히 설명하겠다.
+        //지금은 Pointcut 의 동작 방식과 전체 구조에 집중하자.
 
     }
 
