@@ -3,11 +3,18 @@ package hello.proxy.advisor;
 import hello.proxy.common.advice.TimeAdvice;
 import hello.proxy.common.service.ServiceImpl;
 import hello.proxy.common.service.ServiceInterface;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.ClassFilter;
+import org.springframework.aop.MethodMatcher;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 
+import java.lang.reflect.Method;
+
+@Slf4j
 public class AdvisorTest {
 
     @Test
@@ -43,5 +50,57 @@ public class AdvisorTest {
         //어드바이저가 아니라 어드바이스를 바로 적용했다. 이것은 단순히 편의 메서드이고 결과적으로 해당 메서드
         //내부에서 지금 코드와 똑같은 다음 어드바이저가 생성된다.
         //DefaultPointcutAdvisor(Pointcut.TRUE, new TimeAdvice())
+    }
+
+    @Test
+    @DisplayName("직접 만든 포인트")
+    void advisorTest2() {
+
+        ServiceInterface target = new ServiceImpl();
+        ProxyFactory proxyFactory = new ProxyFactory(target);
+        DefaultPointcutAdvisor advisor = new DefaultPointcutAdvisor(new MyPointCut() ,new TimeAdvice());
+        proxyFactory.addAdvisor(advisor);
+
+        ServiceInterface proxy = (ServiceInterface) proxyFactory.getProxy();
+        proxy.save();
+        proxy.find();
+
+    }
+
+
+    static class MyPointCut implements Pointcut {
+
+        @Override
+        public ClassFilter getClassFilter() {
+            return ClassFilter.TRUE;
+        }
+
+        @Override
+        public MethodMatcher getMethodMatcher() {
+            return new MyMethodMatcher();
+        }
+    }
+
+    static class MyMethodMatcher implements MethodMatcher {
+
+        private String matchName = "save";
+
+        @Override
+        public boolean matches(Method method, Class<?> targetClass) {
+            boolean result = method.getName().equals(matchName);
+            log.info("PointCut 호출 method = {}, targetClass = {}",method.getName(), targetClass);
+            log.info("PointCut 결과 = {}",result);
+            return result;
+        }
+
+        @Override  //isRunTime이 false이면 matches(Method method, Class<?> targetClass)호출하고 true면 matches(Method method, Class<?> targetClass, Object... args) 호출
+        public boolean isRuntime() {
+            return false;
+        }
+
+        @Override
+        public boolean matches(Method method, Class<?> targetClass, Object... args) {
+            return false;
+        }
     }
 }
